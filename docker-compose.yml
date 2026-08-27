@@ -1,0 +1,43 @@
+services:
+  yolo-api:
+    image: ghcr.io/nertonm/yolo-edge-api/yolo-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: yolo-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models:ro    # pesos somente-leitura
+      - ./output:/app/output       # resultados gravados aqui
+      - ./images:/app/images:ro    # imagens de teste
+    environment:
+      - MODEL_NAME=yolov8n.pt
+    networks:
+      - yolo-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  yolo-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: yolo-client
+    volumes:
+      - ./images:/client/images:ro
+      - ./output:/client/output
+    environment:
+      - API_URL=http://yolo-api:8000   # resolve pelo nome do serviço
+    networks:
+      - yolo-net
+    depends_on:
+      yolo-api:
+        condition: service_healthy     # aguarda healthcheck passar
+
+networks:
+  yolo-net:
+    driver: bridge

@@ -216,3 +216,16 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+cache/
+.venv/
+# Pesos do modelo (gerenciados pelo DVC)
+models/*.pt
+models/*.onnx
+# Outputs de inferência
+output/
+
+# Imagens de teste grandes
+images/
+
+# Variáveis de ambiente locais
+.env
