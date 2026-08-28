@@ -1,6 +1,6 @@
 services:
   yolo-api:
-    image: ghcr.io/nertonm/yolo-edge-api/yolo-api:latest
+    image: ${DEPLOY_IMAGE:?DEPLOY_IMAGE must be set}
     build:
       context: .
       dockerfile: Dockerfile.api
@@ -13,6 +13,7 @@ services:
       - ./images:/app/images:ro    # imagens de teste
     environment:
       - MODEL_NAME=yolov8n.pt
+      - PYTHONUNBUFFERED=1
     networks:
       - yolo-net
     restart: unless-stopped

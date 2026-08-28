@@ -5,7 +5,8 @@
 # Em caso de falha, reverte para a imagem anterior automaticamente.
 set -euo pipefail
 
-DEPLOY_PATH="${DEPLOY_PATH:-~/yolo-edge-api}"
+DEPLOY_PATH="${DEPLOY_PATH:-${HOME}/yolo-edge-api}"
+export DEPLOY_IMAGE="${DEPLOY_IMAGE:?DEPLOY_IMAGE must be set}"
 HEALTH_URL="http://localhost:8000/health"
 HEALTH_RETRIES=6
 HEALTH_WAIT=10
@@ -30,7 +31,8 @@ echo "[3/4] Aguardando health check ($((HEALTH_RETRIES * HEALTH_WAIT))s max)..."
 SUCCESS=false
 for i in $(seq 1 $HEALTH_RETRIES); do
   sleep $HEALTH_WAIT
-  if curl -sf "$HEALTH_URL" > /dev/null 2>&1; then
+  HEALTH_RESPONSE=$(curl -sf "$HEALTH_URL" 2>/dev/null || true)
+  if [ -n "$HEALTH_RESPONSE" ] && printf "%s" "$HEALTH_RESPONSE" | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d.get("status") == "ok" and d.get("model_loaded") is True'; then
     SUCCESS=true
     break
   fi
@@ -39,6 +41,8 @@ done
 
 if [ "$SUCCESS" = true ]; then
   echo "[4/4] Health check OK"
+  docker compose ps --status running --services | grep -qx yolo-api
+  echo "[4/4] docker compose ps OK"
   NEW=$(docker inspect yolo-api --format '{{.Config.Image}}' 2>/dev/null)
   echo ""
   echo "[OK] Deploy bem-sucedido: $NEW"
@@ -48,7 +52,7 @@ else
   if [ "$PREVIOUS" != "none" ]; then
     echo "[ROLLBACK] Revertendo para: $PREVIOUS"
     docker compose down
-    IMAGE=$PREVIOUS docker compose up -d
+    DEPLOY_IMAGE="$PREVIOUS" docker compose up -d
     echo "[ROLLBACK] Concluido. Servico restaurado."
   else
     echo "[AVISO] Sem imagem anterior para rollback."

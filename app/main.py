@@ -1,5 +1,6 @@
 import base64
 import io
+import json
 import time
 
 import httpx
@@ -25,6 +26,12 @@ app = FastAPI(
 
 # ── Métricas simples em memória ─────────────────────────────
 _metrics = {"total": 0, "success": 0, "total_ms": 0.0}
+
+
+def log_event(event: str, **fields) -> None:
+    """Emite um evento JSON de uma linha para o log do container."""
+    payload = {"event": event, **fields}
+    print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), flush=True)
 
 
 def _decode_image(image_base64: str) -> np.ndarray:
@@ -85,6 +92,7 @@ async def health_check():
         loaded = True
     except Exception:
         loaded = False
+    log_event("health_check", status="ok", model_loaded=loaded, model_name=model_name)
     return HealthResponse(status="ok", model_loaded=loaded, model_name=model_name)
 
 
@@ -96,6 +104,7 @@ def predict(request: PredictRequest):
         result = _run_inference(img, request.model_name, request.confidence)
         _metrics["success"] += 1
         _metrics["total_ms"] += result.inference_ms
+        log_event("prediction", endpoint="/predict", status="ok", detections=len(result.detections), inference_ms=result.inference_ms, model_name=result.model_used)
         return result
     except HTTPException:
         raise
@@ -118,6 +127,7 @@ def predict_image(request: PredictRequest):
         elapsed_ms = (time.perf_counter() - t0) * 1000
         _metrics["success"] += 1
         _metrics["total_ms"] += elapsed_ms
+        log_event("prediction", endpoint="/predict/image", status="ok", inference_ms=round(elapsed_ms, 2), model_name=request.model_name)
         # 2. plot() retorna o array RGB anotado
         annotated_array = results[0].plot()
         # 3. Salva diretamente via PIL (RGB nativo da web, sem conversão indevida do OpenCV)
@@ -141,6 +151,7 @@ def predict_batch(request: BatchPredictRequest):
         img = _decode_image(img_b64)
         results.append(_run_inference(img, request.model_name, request.confidence))
     total_ms = (time.perf_counter() - t_total) * 1000
+    log_event("prediction_batch", endpoint="/predict/batch", status="ok", count=len(results), total_inference_ms=round(total_ms, 2), model_name=request.model_name)
     return BatchPredictResponse(results=results, total_inference_ms=round(total_ms, 2))
 
 

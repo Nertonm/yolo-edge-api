@@ -86,9 +86,8 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=sha,prefix=sha-
+            type=sha,prefix=sha-,format=long
             type=semver,pattern={{version}}
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
       - name: Build e Push (multi-arch)
         uses: docker/build-push-action@v5
         with:
@@ -161,7 +160,8 @@ jobs:
           command_timeout: 30m
           script: |
             export DEPLOY_PATH=${{ secrets.RPI_DEPLOY_PATH }}
-            cd $DEPLOY_PATH
+            export DEPLOY_IMAGE=ghcr.io/nertonm/yolo-edge-api/yolo-api:sha-${{ github.sha }}
+            cd "$DEPLOY_PATH"
             git pull origin main
             bash scripts/deploy.sh
       - name: Notificar resultado
