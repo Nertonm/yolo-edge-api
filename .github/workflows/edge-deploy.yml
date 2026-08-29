@@ -131,8 +131,8 @@ jobs:
           chmod 600 ~/.ssh/dvc_key
           dvc remote modify --local local_remote keyfile ~/.ssh/dvc_key
           dvc pull
-      - name: Executar quality gate (mAP@0.5 >= 0.50)
-        run: python scripts/validate_model.py --threshold 0.50
+      - name: Executar quality gate (mAP@0.5 >= 0.60, dataset EPI)
+        run: python scripts/validate_model.py --dataset dataset/exports/epi-v1/data.yaml --threshold 0.60
 
   # ----------------------------------------------------------
   # JOB 4: Deploy no Raspberry Pi 5 via SSH

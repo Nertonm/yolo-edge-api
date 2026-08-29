@@ -229,3 +229,11 @@ images/
 
 # Variáveis de ambiente locais
 .env
+runs/
+stream/logs/
+dataset/raw/
+*.bak-*
+runs/
+stream/logs/
+dataset/raw/
+*.bak-*
