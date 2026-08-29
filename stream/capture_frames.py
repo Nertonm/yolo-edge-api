@@ -115,11 +115,12 @@ def open_capture(args):
     return cap
 
 
-def is_sharp_enough(frame: np.ndarray, threshold: float = 80.0) -> bool:
+def is_sharp_enough(frame: np.ndarray, threshold: float = 15.0) -> bool:
     """
     Descarta frames borrados usando a variância do Laplaciano.
     Um frame nítido tem alta variância nas bordas detectadas.
-    Threshold calibrado para câmeras CSI em 640x480.
+    Default acompanha --lap-threshold da CLI (15); a cena real desta câmera
+    tem variância 15-20, e o threshold 80 da apostila descartaria tudo aqui.
     """
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     score = cv2.Laplacian(gray, cv2.CV_64F).var()
@@ -152,17 +153,21 @@ def main():
                         cap.read()
                     ret, frame = cap.read()
             else:
+                # Aguarda o intervalo desde a última captura com sleep em vez de
+                # spin de re-leitura (que decodificava frames à toa).
+                remaining = args.interval - (time.time() - last_saved)
+                if remaining > 0:
+                    time.sleep(remaining)
+                    # descarta frames acumulados no buffer durante a espera
+                    flush_until = time.time() + 0.3
+                    while time.time() < flush_until:
+                        cap.read()
                 ret, frame = cap.read()
 
             if not ret:
                 print("[AVISO] Frame inválido, tentando novamente...")
                 time.sleep(0.1)
                 continue
-
-            if not args.manual:
-                now = time.time()
-                if now - last_saved < args.interval:
-                    continue
 
             # Descarta frames borrados automaticamente
             if not is_sharp_enough(frame, args.lap_threshold):
