@@ -25,31 +25,46 @@ _latest_jpg: bytes = b""
 
 
 def _capture_loop(device: int, width: int, height: int, fps: int):
-    """Lê frames JPEG direto do rpicam-vid e mantém só o mais recente."""
+    """Lê frames JPEG direto do rpicam-vid e mantém só o mais recente.
+
+    Se o rpicam-vid morrer (SIGPIPE ao escrever quando o consumer do
+    /stream cai, falha transiente etc.), respawna em 1s. O servidor nunca
+    perde a câmera por causa de um cliente de /stream desconectar.
+    """
     global _latest_jpg
-    cmd = [
-        "rpicam-vid", "-t", "0", "-n", "--codec", "mjpeg",
-        "--camera", str(device),
-        "--width", str(width), "--height", str(height),
-        "--framerate", str(fps),
-        "-o", "-",
-    ]
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    buf = b""
     while True:
-        chunk = proc.stdout.read(4096)
-        if not chunk:
-            break
-        buf += chunk
-        end = buf.find(b"\xff\xd9")
-        if end == -1:
-            continue
-        start = buf.rfind(b"\xff\xd8", 0, end)
-        if start == -1:
-            continue
-        with _lock:
-            _latest_jpg = buf[start:end + 2]
-        buf = buf[end + 2:]
+        cmd = [
+            "rpicam-vid", "-t", "0", "-n", "--codec", "mjpeg",
+            "--camera", str(device),
+            "--width", str(width), "--height", str(height),
+            "--framerate", str(fps),
+            "-o", "-",
+        ]
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        buf = b""
+        dead = False
+        while not dead:
+            chunk = proc.stdout.read(4096)
+            if not chunk:
+                dead = True
+                break
+            buf += chunk
+            end = buf.find(b"\xff\xd9")
+            if end == -1:
+                continue
+            start = buf.rfind(b"\xff\xd8", 0, end)
+            if start == -1:
+                continue
+            with _lock:
+                _latest_jpg = buf[start:end + 2]
+            buf = buf[end + 2:]
+        code = proc.poll()
+        print(f"[WARN] rpicam-vid terminou (code={code}); reiniciando em 1s", flush=True)
+        try:
+            proc.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+        time.sleep(1.0)
 
 
 def _generate_mjpeg():
