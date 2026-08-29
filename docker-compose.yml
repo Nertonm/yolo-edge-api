@@ -39,6 +39,35 @@ services:
       yolo-api:
         condition: service_healthy     # aguarda healthcheck passar
 
+  # Serviço de stream MJPEG — integrado ao pipeline (Aula 4, Checkpoint 4)
+  yolo-stream:
+    build:
+      context: .
+      dockerfile: Dockerfile.stream   # apenas o streaming precisa de rpicam/libcamera
+    container_name: yolo-stream
+    ports:
+      - "5000:5000"
+    privileged: true              # mesmo acesso à câmera do yolo-api
+    volumes:
+      - ./stream:/app/stream        # código do módulo de streaming
+      - ./models:/app/models:ro     # pesos do modelo (read-only)
+      - /dev:/dev                   # dispositivos de hardware do host
+      - /run/udev:/run/udev:ro      # permite ao libcamera identificar o sensor via udev
+    environment:
+      - MODEL_NAME=yolov8n.pt
+      - PYTHONUNBUFFERED=1
+    command: >
+      python3 stream/mjpeg_server.py
+      --device 0
+      --infer-every 3
+      --infer-size 320
+      --port 5000
+    restart: unless-stopped
+    depends_on:
+      - yolo-api
+    networks:
+      - yolo-net
+
 networks:
   yolo-net:
     driver: bridge

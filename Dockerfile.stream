@@ -1,0 +1,19 @@
+# Dockerfile.stream: base do yolo-stream (câmera CSI via rpicam)
+# Separa do Dockerfile.api: só o streaming precisa de rpicam-apps/libcamera.
+FROM python:3.11-slim-bookworm
+# rpicam-apps só existe no repo Raspberry Pi; a keyring é baixada no build.
+# curl é instalado antes; rpicam-apps entra no segundo apt.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libgl1 libglib2.0-0 libgomp1 curl && \
+    curl -fsSL https://archive.raspberrypi.com/debian/raspberrypi.gpg.key \
+        -o /usr/share/keyrings/raspberrypi-archive-keyring.pgp && \
+    echo "deb [signed-by=/usr/share/keyrings/raspberrypi-archive-keyring.pgp] http://archive.raspberrypi.com/debian/ bookworm main" > /etc/apt/sources.list.d/raspi.list && \
+    apt-get update && apt-get install -y --no-install-recommends rpicam-apps && \
+    rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY app/requirements.txt .
+RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir -r requirements.txt
+COPY app/ .
+EXPOSE 5000
+CMD ["python3", "stream/mjpeg_server.py", "--device", "0", "--port", "5000"]
