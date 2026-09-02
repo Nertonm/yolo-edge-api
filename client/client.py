@@ -34,7 +34,7 @@ def wait_for_api(max_retries: int = 10, delay: float = 3.0):
 
 def run_single_inference(image_path: Path, confidence: float = 0.25):
     """Envia uma imagem e imprime as detecções recebidas."""
-    print(f"\n─── Inferência: {image_path.name} ───")
+    print(f"\n--- Inferência: {image_path.name} ---")
     payload = {
         "image_base64": encode_image(image_path),
         "confidence": confidence,
@@ -60,7 +60,7 @@ def run_single_inference(image_path: Path, confidence: float = 0.25):
 
 def run_batch_inference(image_paths: list, confidence: float = 0.25):
     """Envia múltiplas imagens em uma única requisição batch."""
-    print(f"\n─── Batch: {len(image_paths)} imagens ───")
+    print(f"\n--- Batch: {len(image_paths)} imagens ---")
     payload = {
         "images_base64": [encode_image(p) for p in image_paths],
         "confidence": confidence,
@@ -91,6 +91,6 @@ if __name__ == "__main__":
             run_batch_inference(images)
     # Consulta métricas ao final
     metrics = httpx.get(f"{API_URL}/metrics").json()
-    print(f"\n─── Métricas da API ───")
+    print(f"\n--- Métricas da API ---")
     print(f"  Total de requisições : {metrics['total_requests']}")
     print(f"  Latência média       : {metrics['avg_inference_ms']} ms")

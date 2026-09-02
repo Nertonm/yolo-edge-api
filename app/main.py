@@ -24,7 +24,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# ── Métricas simples em memória ─────────────────────────────
+# -- Métricas simples em memória -----------------------------
 _metrics = {"total": 0, "success": 0, "total_ms": 0.0}
 
 
@@ -83,7 +83,7 @@ def _run_inference(image_np: np.ndarray, model_name: str, confidence: float) -> 
     )
 
 
-# ── Endpoints ───────────────────────────────────────────────
+# -- Endpoints -----------------------------------------------
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
     model_name = get_default_model_name()

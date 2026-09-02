@@ -1,4 +1,4 @@
-"""Testes da API YOLO Inference (Aula 3 — Edge AI).
+"""Testes da API YOLO Inference (Aula 3 : Edge AI).
 
 Smoke tests (/health, /metrics), unit tests (_decode_image) e integration
 tests (/predict, /predict/batch) com a imagem de referência zidane.jpg.
@@ -22,7 +22,7 @@ ASSETS = Path(__file__).resolve().parent / "assets"
 client = TestClient(app)
 
 
-# ── SMOKE TESTS — saúde e observabilidade ─────────────────────────
+# -- SMOKE TESTS : saúde e observabilidade -------------------------
 class TestSmokeEndpoints:
     def test_health_endpoint_returns_fields(self):
         """Endpoint /health deve retornar status, model_loaded e model_name."""
@@ -39,7 +39,7 @@ class TestSmokeEndpoints:
         assert resp.status_code == 200
 
 
-# ── UNIT TESTS — funções isoladas ─────────────────────────────────
+# -- UNIT TESTS : funções isoladas ---------------------------------
 class TestDecodeImage:
     def _make_b64_image(self, width=32, height=32, fmt="JPEG"):
         img = Image.new("RGB", (width, height), color=(128, 64, 192))
@@ -64,7 +64,7 @@ class TestDecodeImage:
             _decode_image("dado_invalido_nao_e_base64")
 
 
-# ── INTEGRATION TESTS — fluxo completo de inferência ─────────────
+# -- INTEGRATION TESTS : fluxo completo de inferência -------------
 class TestPredictEndpoint:
     @pytest.fixture
     def zidane_b64(self):
@@ -123,7 +123,7 @@ class TestPredictEndpoint:
         assert resp.status_code == 422
 
 
-# ── BATCH ENDPOINT ────────────────────────────────────────────────
+# -- BATCH ENDPOINT ------------------------------------------------
 class TestBatchEndpoint:
     @pytest.fixture
     def two_images_b64(self):

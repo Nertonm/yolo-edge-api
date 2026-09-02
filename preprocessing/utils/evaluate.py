@@ -154,7 +154,7 @@ def evaluate_pipeline(
     model = YOLO(MODEL_PATH)
     
     if preprocess_fn is None:
-        # Avaliação padrão — sem pré-processamento customizado
+        # Avaliação padrão : sem pré-processamento customizado
         val_kwargs = {
             "data": resolve_dataset_yaml(DATASET_YAML),
             "split": split,

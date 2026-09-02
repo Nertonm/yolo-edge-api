@@ -101,7 +101,7 @@ jobs:
           cache-to:   type=gha,mode=max
 
   # ----------------------------------------------------------
-  # JOB 3: Quality gate do modelo
+  # JOB 3: Critério de qualidade do modelo
   # Valida mAP@0.5 antes de autorizar o deploy
   # ----------------------------------------------------------
   model-gate:

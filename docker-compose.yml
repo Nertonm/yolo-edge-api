@@ -39,7 +39,7 @@ services:
       yolo-api:
         condition: service_healthy     # aguarda healthcheck passar
 
-  # Serviço de stream MJPEG — integrado ao pipeline (Aula 4, Checkpoint 4)
+  # Serviço de stream MJPEG : integrado ao pipeline (Aula 4, Checkpoint 4)
   yolo-stream:
     build:
       context: .

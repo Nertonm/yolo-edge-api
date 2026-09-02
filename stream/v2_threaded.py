@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-stream/v2_threaded.py — Captura e inferência em threads separadas.
+stream/v2_threaded.py : Captura e inferência em threads separadas.
 Buffer de 1 frame elimina o acúmulo e garante processamento do frame atual.
 Execução: python3 stream/v2_threaded.py --device 0
 """
@@ -26,7 +26,7 @@ torch.load = _patched_torch_load
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
-# ── Classe de captura em thread dedicada ────────────────────
+# -- Classe de captura em thread dedicada --------------------
 class CameraCapture:
     """
     Captura frames em thread separada.
@@ -56,7 +56,7 @@ class CameraCapture:
     def start(self):
         self._proc = subprocess.Popen(self._cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         self._thread.start()
-        print(f"[CameraCapture] rpicam-vid iniciado (pid={self._proc.pid}) — buffer maxsize=1")
+        print(f"[CameraCapture] rpicam-vid iniciado (pid={self._proc.pid}) : buffer maxsize=1")
         return self
 
     def _capture_loop(self):
@@ -130,12 +130,12 @@ class CameraCapture:
                 self._proc.kill()
         if self._thread.is_alive():
             self._thread.join(timeout=2.0)
-        print("[CameraCapture] Encerrada — ",
+        print("[CameraCapture] Encerrada : ",
               f"capturados: {self.frames_captured}, ",
               f"descartados: {self.frames_dropped}")
 
 
-# ── Classe de inferência com métricas ───────────────────────
+# -- Classe de inferência com métricas -----------------------
 class YOLOInference:
     """Wrapper do YOLO com métricas de latência acumuladas."""
 
@@ -215,7 +215,7 @@ def main():
 
     total_time = time.perf_counter() - t_start
     print("\n" + "=" * 58)
-    print("RELATÓRIO — Threading com buffer de 1 frame")
+    print("RELATÓRIO : Threading com buffer de 1 frame")
     print("=" * 58)
     print(f"  Frames processados   : {frame_count}")
     print(f"  Tempo total          : {total_time:.1f} s")

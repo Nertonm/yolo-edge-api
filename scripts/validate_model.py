@@ -1,6 +1,6 @@
 """
 scripts/validate_model.py
-Quality gate: bloqueia o deploy se o mAP@0.5 estiver abaixo do limiar.
+Critério de qualidade: bloqueia o deploy se o mAP@0.5 estiver abaixo do limiar.
 Uso: python scripts/validate_model.py [--threshold 0.60]
 
 Padrao: valida contra o dataset EPI da Aula 4 (dataset/exports/epi-v1/data.yaml).
@@ -105,7 +105,7 @@ def main():
     if map50 < args.threshold:
         print("[FALHA] mAP abaixo do limiar. Deploy bloqueado.")
         sys.exit(1)
-    print("[OK] Quality gate aprovado. Deploy autorizado.")
+    print("[OK] Critério de qualidade aprovado. Deploy autorizado.")
 
 
 if __name__ == "__main__":

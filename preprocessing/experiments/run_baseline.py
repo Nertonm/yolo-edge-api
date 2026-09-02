@@ -50,6 +50,6 @@ if __name__ == "__main__":
     )
 
     print(f"\nBaseline mAP@0.5 = {baseline['map50']:.4f}")
-    print("Anote este valor — ele é a referência de todos os experimentos.")
+    print("Registre este valor: ele é a referência de todos os experimentos.")
     if classes is not None:
         print(f"Classes avaliadas: {classes}")

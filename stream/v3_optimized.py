@@ -228,7 +228,7 @@ def main():
             if writer:
                 writer.write(annotated)
             if not args.no_display:
-                cv2.imshow("YOLO V3 — q encerra", annotated)
+                cv2.imshow("YOLO V3 : q encerra", annotated)
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
     finally:
@@ -238,7 +238,7 @@ def main():
         cv2.destroyAllWindows()
 
     print("\n" + "=" * 58)
-    print("RELATÓRIO — V3 frame skip + OSD")
+    print("RELATÓRIO : V3 frame skip + OSD")
     print("=" * 58)
     total_time = time.perf_counter() - t_start
     print(f"  Frames processados   : {processed}")

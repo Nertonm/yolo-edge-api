@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-stream/mjpeg_server.py — Serve o stream YOLO anotado como MJPEG via HTTP.
+stream/mjpeg_server.py : Serve o stream YOLO anotado como MJPEG via HTTP.
 Acesse no navegador: http://<IP_DO_RASPBERRY>:5000/stream
 Execução: python3 stream/mjpeg_server.py --device 0 --port 5000
 """
@@ -16,7 +16,7 @@ from flask import Flask, Response
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from stream.v3_optimized import OptimizedCamera, RealtimeDetector
 
-# ── Estado global do servidor ────────────────────────────────
+# -- Estado global do servidor --------------------------------
 app     = Flask(__name__)
 _camera   = None
 _detector = None
@@ -71,7 +71,7 @@ def index():
     <html>
     <head>
         <meta charset='UTF-8'>
-        <title>YOLO — Stream em Tempo Real</title>
+        <title>YOLO : Stream em Tempo Real</title>
         <style>
             body { background:#111; color:#eee; font-family:sans-serif;
                    display:flex; flex-direction:column; align-items:center;
@@ -82,7 +82,7 @@ def index():
         </style>
     </head>
     <body>
-        <h1>YOLOv8 — Raspberry Pi 5 — Tempo Real</h1>
+        <h1>YOLOv8 : Raspberry Pi 5 : Tempo Real</h1>
         <img src='/stream' />
         <p>Stream MJPEG com inferência YOLO e anotações em tempo real.</p>
     </body>

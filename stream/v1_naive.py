@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-stream/v1_naive.py — Implementação ingênua: diagnóstico de FPS e latência.
+stream/v1_naive.py : Implementação ingênua: diagnóstico de FPS e latência.
 Execução: python3 stream/v1_naive.py --device 0 --width 640 --height 480
 """
 import argparse
@@ -65,7 +65,7 @@ def main():
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     leftover = b""
 
-    # ── Métricas de diagnóstico ─────────────────────────────
+    # -- Métricas de diagnóstico -----------------------------
     frame_count    = 0
     frames_captured = 0
     frames_dropped  = 0
@@ -80,7 +80,7 @@ def main():
     while frame_count < args.frames:
         t0 = time.perf_counter()
 
-        # ── Etapa 1: captura ─────────────────────────────────
+        # -- Etapa 1: captura ---------------------------------
         leftover, frame = _read_next_frame(proc, leftover)
         t1 = time.perf_counter()
 
@@ -88,7 +88,7 @@ def main():
             print("[AVISO] Frame inválido, pulando.")
             continue
 
-        # ── Etapa 2: inferência ──────────────────────────────
+        # -- Etapa 2: inferência ------------------------------
         _results = model(frame, conf=args.conf, verbose=False)
         t2 = time.perf_counter()
 
@@ -113,10 +113,10 @@ def main():
     except subprocess.TimeoutExpired:
         proc.kill()
 
-    # ── Relatório final ─────────────────────────────────────
+    # -- Relatório final -------------------------------------
     n = frame_count
     print("\n" + "=" * 58)
-    print("RELATÓRIO DE DIAGNÓSTICO — Abordagem Ingênua")
+    print("RELATÓRIO DE DIAGNÓSTICO : Abordagem Ingênua")
     print("=" * 58)
     print(f"  Frames medidos    : {n}")
     print(f"  Captura média     : {total_capture/n:>7.1f} ms")
