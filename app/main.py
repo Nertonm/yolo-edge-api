@@ -3,11 +3,13 @@ import io
 import json
 import time
 
+import cv2
 import httpx
 import numpy as np
 from fastapi import FastAPI, HTTPException, Response
 from model import get_default_model_name, load_model
 from PIL import Image
+from preprocessing.preprocessor import CONFIG_DEFAULT, Preprocessor
 from schemas import (
     BatchPredictRequest,
     BatchPredictResponse,
@@ -26,6 +28,7 @@ app = FastAPI(
 
 # -- Métricas simples em memória -----------------------------
 _metrics = {"total": 0, "success": 0, "total_ms": 0.0}
+_preprocessor = Preprocessor(CONFIG_DEFAULT)
 
 
 def log_event(event: str, **fields) -> None:
@@ -59,19 +62,22 @@ def _load_image_from_request(request: PredictRequest) -> np.ndarray:
 
 def _run_inference(image_np: np.ndarray, model_name: str, confidence: float) -> PredictResponse:
     model = load_model(model_name)
+    frame_bgr = np.ascontiguousarray(image_np[:, :, ::-1])
+    preproc_result = _preprocessor.process(frame_bgr)
     t0 = time.perf_counter()
-    results = model(image_np, conf=confidence, verbose=False)
+    results = model(preproc_result.frame, conf=confidence, verbose=False)
     elapsed_ms = (time.perf_counter() - t0) * 1000
     detections = []
-    for r in results:
-        for box in r.boxes:
-            coords = box.xyxy[0].tolist()
+    for result in results:
+        for box in result.boxes:
+            bbox_lb = box.xyxy[0].cpu().numpy().reshape(1, 4)
+            bbox_orig = _preprocessor.adjust_boxes(bbox_lb, preproc_result)[0]
             cls_id = int(box.cls[0].item())
             conf_val = float(box.conf[0].item())
             detections.append(Detection(
                 label=model.names[cls_id],
                 confidence=round(conf_val, 4),
-                bbox=[round(float(c), 2) for c in coords],
+                bbox=[round(float(c), 2) for c in bbox_orig],
             ))
     h, w = image_np.shape[:2]
     return PredictResponse(
@@ -119,19 +125,33 @@ def predict_image(request: PredictRequest):
     """Executa a inferência e retorna a imagem anotada em JPEG com cores 100% calibradas em RGB."""
     _metrics["total"] += 1
     try:
-        # 1. Carrega imagem em RGB
+        # Reutiliza o mesmo caminho pre-processado do endpoint JSON.
         img_rgb = _load_image_from_request(request)
-        model = load_model(request.model_name)
-        t0 = time.perf_counter()
-        results = model(img_rgb, conf=request.confidence, verbose=False)
-        elapsed_ms = (time.perf_counter() - t0) * 1000
+        result = _run_inference(img_rgb, request.model_name, request.confidence)
         _metrics["success"] += 1
-        _metrics["total_ms"] += elapsed_ms
-        log_event("prediction", endpoint="/predict/image", status="ok", inference_ms=round(elapsed_ms, 2), model_name=request.model_name)
-        # 2. plot() retorna o array RGB anotado
-        annotated_array = results[0].plot()
-        # 3. Salva diretamente via PIL (RGB nativo da web, sem conversão indevida do OpenCV)
-        annotated_pil = Image.fromarray(annotated_array)
+        _metrics["total_ms"] += result.inference_ms
+        log_event(
+            "prediction",
+            endpoint="/predict/image",
+            status="ok",
+            detections=len(result.detections),
+            inference_ms=result.inference_ms,
+            model_name=result.model_used,
+        )
+        annotated = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
+        for detection in result.detections:
+            x1, y1, x2, y2 = map(int, detection.bbox)
+            cv2.rectangle(annotated, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.putText(
+                annotated,
+                f"{detection.label} {detection.confidence:.0%}",
+                (x1, max(20, y1 - 6)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.55,
+                (0, 255, 0),
+                2,
+            )
+        annotated_pil = Image.fromarray(cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB))
         buffer = io.BytesIO()
         annotated_pil.save(buffer, format="JPEG", quality=95)
         return Response(content=buffer.getvalue(), media_type="image/jpeg")

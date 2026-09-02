@@ -20,6 +20,8 @@ import numpy as np
 import torch
 from ultralytics import YOLO
 
+from preprocessing.preprocessor import PreprocessConfig, Preprocessor
+
 _orig_torch_load = torch.load
 
 
@@ -131,6 +133,9 @@ class RealtimeDetector:
         self.conf = conf
         self.infer_every = infer_every
         self.infer_size = infer_size
+        self.preprocessor = Preprocessor(
+            PreprocessConfig(infer_size=infer_size)
+        )
         self.frame_idx = 0
         self.last_boxes = []
         self.last_infer_ms = 0.0
@@ -145,21 +150,23 @@ class RealtimeDetector:
 
         infer_frame = self.frame_idx % self.infer_every == 0
         if infer_frame:
-            h, w = frame.shape[:2]
-            small = cv2.resize(frame, (self.infer_size, self.infer_size))
+            preproc_result = self.preprocessor.process(frame)
             t0 = time.perf_counter()
-            results = self.model(small, conf=self.conf, verbose=False)
+            results = self.model(
+                preproc_result.frame, conf=self.conf, verbose=False
+            )
             self.last_infer_ms = (time.perf_counter() - t0) * 1000
-            sx, sy = w / self.infer_size, h / self.infer_size
             self.last_boxes = []
             for result in results:
                 for box in result.boxes:
-                    x1, y1, x2, y2 = box.xyxy[0].tolist()
+                    bbox_lb = box.xyxy[0].cpu().numpy().reshape(1, 4)
+                    x1, y1, x2, y2 = self.preprocessor.adjust_boxes(
+                        bbox_lb, preproc_result
+                    )[0]
                     self.last_boxes.append((
                         self.model.names[int(box.cls[0])],
                         float(box.conf[0]),
-                        int(x1 * sx), int(y1 * sy),
-                        int(x2 * sx), int(y2 * sy),
+                        int(x1), int(y1), int(x2), int(y2),
                     ))
 
         output = frame.copy()
