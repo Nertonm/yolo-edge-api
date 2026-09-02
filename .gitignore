@@ -223,6 +223,7 @@ models/*.pt
 models/*.onnx
 # Outputs de inferência
 output/
+preprocessing/outputs/
 
 # Imagens de teste grandes
 images/
