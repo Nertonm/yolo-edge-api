@@ -13,25 +13,25 @@ sys.path.insert(0, ".")
 from preprocessing.utils.evaluate import evaluate_pipeline
 
 
-def preproc_rgb_only(frame: np.ndarray) -> np.ndarray:
-    """Apenas BGR para RGB, sem filtro."""
-    return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+def preproc_no_filter(frame: np.ndarray) -> np.ndarray:
+    """Retorna o frame BGR sem filtro para avaliação serializada."""
+    return frame
 
 
 def preproc_gauss_33(frame: np.ndarray) -> np.ndarray:
-    return cv2.GaussianBlur(preproc_rgb_only(frame), (3, 3), sigmaX=0.8)
+    return cv2.GaussianBlur(frame, (3, 3), sigmaX=0.8)
 
 
 def preproc_gauss_55(frame: np.ndarray) -> np.ndarray:
-    return cv2.GaussianBlur(preproc_rgb_only(frame), (5, 5), sigmaX=1.5)
+    return cv2.GaussianBlur(frame, (5, 5), sigmaX=1.5)
 
 
 def preproc_gauss_77(frame: np.ndarray) -> np.ndarray:
-    return cv2.GaussianBlur(preproc_rgb_only(frame), (7, 7), sigmaX=2.0)
+    return cv2.GaussianBlur(frame, (7, 7), sigmaX=2.0)
 
 
 def preproc_median_3(frame: np.ndarray) -> np.ndarray:
-    return cv2.medianBlur(preproc_rgb_only(frame), 3)
+    return cv2.medianBlur(frame, 3)
 
 
 def benchmark_filter_cost(n_frames: int = 200) -> None:
@@ -62,11 +62,11 @@ def main() -> int:
 
     results = [
         evaluate_pipeline(None, "E3-baseline"),
-        evaluate_pipeline(preproc_rgb_only, "E3-A: RGB apenas (sem filtro)"),
+        evaluate_pipeline(preproc_no_filter, "E3-A: Sem filtro (baseline)"),
         evaluate_pipeline(preproc_gauss_33, "E3-B: GaussianBlur 3x3"),
         evaluate_pipeline(preproc_gauss_55, "E3-C: GaussianBlur 5x5"),
-        evaluate_pipeline(preproc_gauss_77, "E3-D: GaussianBlur 7x7"),
-        evaluate_pipeline(preproc_median_3, "E3-E: medianBlur k=3"),
+        evaluate_pipeline(preproc_median_3, "E3-D: medianBlur k=3"),
+        evaluate_pipeline(preproc_gauss_77, "E3-E: GaussianBlur 7x7 (extra)"),
     ]
     benchmark_filter_cost()
 

@@ -221,6 +221,7 @@ cache/
 # Pesos do modelo (gerenciados pelo DVC)
 models/*.pt
 models/*.onnx
+*.pth
 # Outputs de inferência
 output/
 preprocessing/outputs/

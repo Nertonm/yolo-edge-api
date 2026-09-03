@@ -14,22 +14,22 @@ from preprocessing.utils.evaluate import evaluate_pipeline
 DATASET_DARK = "dataset/exports/epi-v1-dark/data.yaml"
 
 
-def rgb_only(frame):
-    return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+def no_equalization(frame):
+    return frame
 
 
 def equalize_hist_hsv(frame):
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     hue, saturation, value = cv2.split(hsv)
     value = cv2.equalizeHist(value)
-    return cv2.cvtColor(cv2.merge([hue, saturation, value]), cv2.COLOR_HSV2RGB)
+    return cv2.cvtColor(cv2.merge([hue, saturation, value]), cv2.COLOR_HSV2BGR)
 
 
 def equalize_hist_lab(frame):
     lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
     lightness, channel_a, channel_b = cv2.split(lab)
     lightness = cv2.equalizeHist(lightness)
-    return cv2.cvtColor(cv2.merge([lightness, channel_a, channel_b]), cv2.COLOR_LAB2RGB)
+    return cv2.cvtColor(cv2.merge([lightness, channel_a, channel_b]), cv2.COLOR_LAB2BGR)
 
 
 def clahe_hsv(frame, clip=2.0, tile=8):
@@ -37,7 +37,7 @@ def clahe_hsv(frame, clip=2.0, tile=8):
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     hue, saturation, value = cv2.split(hsv)
     value = clahe.apply(value)
-    return cv2.cvtColor(cv2.merge([hue, saturation, value]), cv2.COLOR_HSV2RGB)
+    return cv2.cvtColor(cv2.merge([hue, saturation, value]), cv2.COLOR_HSV2BGR)
 
 
 def clahe_lab(frame, clip=2.0, tile=8):
@@ -45,7 +45,7 @@ def clahe_lab(frame, clip=2.0, tile=8):
     lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
     lightness, channel_a, channel_b = cv2.split(lab)
     lightness = clahe.apply(lightness)
-    return cv2.cvtColor(cv2.merge([lightness, channel_a, channel_b]), cv2.COLOR_LAB2RGB)
+    return cv2.cvtColor(cv2.merge([lightness, channel_a, channel_b]), cv2.COLOR_LAB2BGR)
 
 
 def main() -> int:
@@ -62,7 +62,7 @@ def main() -> int:
     evaluate_module.DATASET_YAML = DATASET_DARK
     try:
         results = [
-            evaluate_pipeline(rgb_only, "E4-A: RGB apenas (ilum. ruim)"),
+            evaluate_pipeline(no_equalization, "E4-A: Sem equalização (ilum. ruim)"),
             evaluate_pipeline(equalize_hist_hsv, "E4-B: equalizeHist (HSV/V)"),
             evaluate_pipeline(equalize_hist_lab, "E4-C: equalizeHist (LAB/L)"),
             evaluate_pipeline(clahe_hsv, "E4-D: CLAHE clip=2 tile=8 (HSV)"),
