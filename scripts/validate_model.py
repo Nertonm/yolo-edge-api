@@ -38,12 +38,18 @@ DATASET_YAML = "dataset/exports/epi-v1/data.yaml"
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", default="models/yolov8n.pt")
+    parser.add_argument("--model", default="models/yolo-epi.pt")
     parser.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD)
     parser.add_argument(
         "--dataset",
         default=None,
         help="Caminho para o YAML do dataset de validacao (default: dataset EPI)",
+    )
+    parser.add_argument(
+        "--split",
+        choices=("train", "val", "test"),
+        default="val",
+        help="Split do dataset a avaliar (default: val)",
     )
     return parser.parse_args()
 
@@ -94,7 +100,7 @@ def main():
     if dataset:
         dataset = resolve_dataset_yaml(dataset)
         print(f"[INFO] Validando com dataset: {dataset}")
-        metrics = model.val(data=dataset, split="val", verbose=False)
+        metrics = model.val(data=dataset, split=args.split, verbose=False)
     else:
         # Validacao rapida com COCO128 (dataset embutido no ultralytics)
         print("[INFO] Validando com COCO128 (fallback, dataset EPI ausente)")

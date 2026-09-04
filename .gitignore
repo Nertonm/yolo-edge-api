@@ -235,6 +235,10 @@ runs/
 stream/logs/
 dataset/raw/
 *.bak-*
+*.avi
+*.mp4
+*.mov
+*.mkv
 runs/
 stream/logs/
 dataset/raw/
