@@ -4,6 +4,7 @@ Smoke tests (/health, /metrics), unit tests (_decode_image) e integration
 tests (/predict, /predict/batch) com a imagem de referência zidane.jpg.
 """
 import base64
+import binascii
 import io
 from pathlib import Path
 
@@ -38,6 +39,17 @@ class TestSmokeEndpoints:
         resp = client.get("/metrics")
         assert resp.status_code == 200
 
+    def test_health_returns_503_when_model_is_unavailable(self, monkeypatch):
+        from app import main as main_module
+
+        def missing_model(_name):
+            raise FileNotFoundError("missing")
+
+        monkeypatch.setattr(main_module, "load_model", missing_model)
+        response = client.get("/health")
+        assert response.status_code == 503
+        assert response.json()["model_loaded"] is False
+
 
 # -- UNIT TESTS : funções isoladas ---------------------------------
 class TestDecodeImage:
@@ -59,8 +71,24 @@ class TestDecodeImage:
         result = _decode_image(self._make_b64_image(fmt="PNG"))
         assert result.shape[2] == 3
 
+    def test_model_name_defaults_to_environment(self, monkeypatch):
+        from types import SimpleNamespace
+
+        from app import main as main_module
+
+        class FakeModel:
+            def __call__(self, *args, **kwargs):
+                return [SimpleNamespace(boxes=[])]
+
+        monkeypatch.setattr(main_module, "get_default_model_name", lambda: "yolo-epi.pt")
+        monkeypatch.setattr(main_module, "load_model", lambda name: FakeModel())
+        result = main_module._run_inference(
+            np.zeros((32, 32, 3), dtype=np.uint8), None, 0.25
+        )
+        assert result.model_used == "yolo-epi.pt"
+
     def test_invalid_base64_raises(self):
-        with pytest.raises(Exception):
+        with pytest.raises(binascii.Error):
             _decode_image("dado_invalido_nao_e_base64")
 
 

@@ -5,6 +5,7 @@ Acesse no navegador: http://<IP_DO_RASPBERRY>:5000/stream
 Execução: python3 stream/mjpeg_server.py --device 0 --port 5000
 """
 import argparse
+import logging
 import sys
 import threading
 import time
@@ -17,29 +18,42 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from stream.v3_optimized import OptimizedCamera, RealtimeDetector
 
 # -- Estado global do servidor --------------------------------
+logger = logging.getLogger(__name__)
+
 app     = Flask(__name__)
 _camera   = None
 _detector = None
 _lock     = threading.Lock()
 _latest_jpg: bytes = b""   # último frame JPEG comprimido
+_producer_alive = False
+_last_frame_time = 0.0
+_producer_error = None
 
 
 def _frame_producer():
     """Thread que captura, processa e comprime frames continuamente."""
-    global _latest_jpg
-    while True:
-        frame = _camera.read(timeout=2.0)
-        if frame is None:
-            continue
+    global _latest_jpg, _producer_alive, _last_frame_time, _producer_error
+    try:
+        while True:
+            frame = _camera.read(timeout=2.0)
+            if frame is None:
+                continue
 
-        annotated = _detector.process(frame)
+            annotated = _detector.process(frame)
 
-        # Comprime para JPEG (qualidade 80 = bom equilíbrio tamanho/qualidade)
-        ok, jpg = cv2.imencode('.jpg', annotated,
-                               [cv2.IMWRITE_JPEG_QUALITY, 80])
-        if ok:
-            with _lock:
-                _latest_jpg = jpg.tobytes()
+            # Comprime para JPEG (qualidade 80 = bom equilíbrio tamanho/qualidade)
+            ok, jpg = cv2.imencode('.jpg', annotated,
+                                   [cv2.IMWRITE_JPEG_QUALITY, 80])
+            if ok:
+                with _lock:
+                    _latest_jpg = jpg.tobytes()
+                    _producer_alive = True
+                    _last_frame_time = time.monotonic()
+    except Exception as exc:
+        logger.exception("Produtor de frames parou")
+        with _lock:
+            _producer_alive = False
+            _producer_error = type(exc).__name__
 
 
 def _generate_mjpeg():
@@ -101,15 +115,24 @@ def stream():
 
 @app.route('/health')
 def health():
-    """ Health check compatível com o padrão da API de inferência."""
+    """Health check baseado na atividade recente do produtor."""
     import json
+    with _lock:
+        alive = _producer_alive and (time.monotonic() - _last_frame_time < 5.0)
+        error = _producer_error
     status = {
-        "status": "ok",
-        "stream": "active",
+        "status": "ok" if alive else "error",
+        "stream": "active" if alive else "inactive",
         "frame_count": _detector.frame_idx if _detector else 0,
         "inference_ms": round(_detector.last_infer_ms, 1) if _detector else 0.0,
     }
-    return Response(json.dumps(status), mimetype='application/json')
+    if error:
+        status["error"] = error
+    return Response(
+        json.dumps(status),
+        mimetype='application/json',
+        status=200 if alive else 503,
+    )
 
 
 def parse_args():

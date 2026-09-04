@@ -1,9 +1,6 @@
 services:
   yolo-api:
     image: ${DEPLOY_IMAGE:?DEPLOY_IMAGE must be set}
-    build:
-      context: .
-      dockerfile: Dockerfile.api
     container_name: yolo-api
     ports:
       - "8000:8000"

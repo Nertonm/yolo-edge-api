@@ -61,8 +61,11 @@ def _load_image_from_request(request: PredictRequest) -> np.ndarray:
         return np.array(img)
 
 
-def _run_inference(image_np: np.ndarray, model_name: str, confidence: float) -> PredictResponse:
-    model = load_model(model_name)
+def _run_inference(
+    image_np: np.ndarray, model_name: str | None, confidence: float
+) -> PredictResponse:
+    effective_model_name = model_name or get_default_model_name()
+    model = load_model(effective_model_name)
     frame_bgr = np.ascontiguousarray(image_np[:, :, ::-1])
     preproc_result = _preprocessor.process(frame_bgr)
     t0 = time.perf_counter()
@@ -84,7 +87,7 @@ def _run_inference(image_np: np.ndarray, model_name: str, confidence: float) -> 
     return PredictResponse(
         detections=detections,
         inference_ms=round(elapsed_ms, 2),
-        model_used=model_name,
+        model_used=effective_model_name,
         image_width=w,
         image_height=h,
     )
@@ -97,10 +100,20 @@ async def health_check():
     try:
         load_model(model_name)
         loaded = True
-    except Exception:
+    except Exception as exc:
         loaded = False
-    log_event("health_check", status="ok", model_loaded=loaded, model_name=model_name)
-    return HealthResponse(status="ok", model_loaded=loaded, model_name=model_name)
+        log_event("health_check", status="error", model_loaded=False,
+                  model_name=model_name, error=type(exc).__name__)
+    if not loaded:
+        return Response(
+            content=HealthResponse(
+                status="error", model_loaded=False, model_name=model_name
+            ).model_dump_json(),
+            media_type="application/json",
+            status_code=503,
+        )
+    log_event("health_check", status="ok", model_loaded=True, model_name=model_name)
+    return HealthResponse(status="ok", model_loaded=True, model_name=model_name)
 
 
 @app.post("/predict", response_model=PredictResponse)
