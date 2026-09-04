@@ -23,9 +23,15 @@ echo "[INFO] Imagem atual: $PREVIOUS"
 
 echo "[1/4] Baixando nova imagem..."
 docker compose pull
+DVC_PYTHON="${DVC_PYTHON:-${DEPLOY_PATH}/.venv/bin/python}"
+if [ ! -x "$DVC_PYTHON" ]; then
+  echo "[ERRO] Python do DVC nao encontrado: $DVC_PYTHON" >&2
+  exit 1
+fi
+"$DVC_PYTHON" -m dvc pull models/yolo-epi.pt
 
 echo "[2/4] Iniciando nova versao..."
-docker compose up -d
+docker compose up -d --build
 
 echo "[3/4] Aguardando health check ($((HEALTH_RETRIES * HEALTH_WAIT))s max)..."
 SUCCESS=false
