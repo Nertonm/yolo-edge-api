@@ -134,7 +134,7 @@ jobs:
       - name: Recuperar dataset via DVC
         run: dvc pull dataset/exports/epi-v1
       - name: Executar quality gate com dataset customizado
-        run: python scripts/validate_model.py --dataset dataset/exports/epi-v1/data.yaml --threshold 0.60
+        run: python scripts/validate_model.py --model models/yolo-epi.pt --dataset dataset/exports/epi-v1/data.yaml --threshold 0.60
 
   # ----------------------------------------------------------
   # JOB 4: Deploy no Raspberry Pi 5 via SSH
