@@ -12,7 +12,7 @@ services:
       - ./output:/app/output       # resultados gravados aqui
       - ./images:/app/images:ro    # imagens de teste
     environment:
-      - MODEL_NAME=yolov8n.pt
+      - MODEL_NAME=yolo-epi.pt
       - PYTHONUNBUFFERED=1
     networks:
       - yolo-net
@@ -54,11 +54,12 @@ services:
       - /dev:/dev                   # dispositivos de hardware do host
       - /run/udev:/run/udev:ro      # permite ao libcamera identificar o sensor via udev
     environment:
-      - MODEL_NAME=yolov8n.pt
+      - MODEL_NAME=yolo-epi.pt
       - PYTHONUNBUFFERED=1
     command: >
       python3 stream/mjpeg_server.py
       --device 0
+      --model models/yolo-epi.pt
       --infer-every 3
       --infer-size 320
       --port 5000
