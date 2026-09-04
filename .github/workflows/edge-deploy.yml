@@ -164,7 +164,7 @@ jobs:
             export DEPLOY_PATH=${{ secrets.RPI_DEPLOY_PATH }}
             export DEPLOY_IMAGE=ghcr.io/nertonm/yolo-edge-api/yolo-api:sha-${{ github.sha }}
             cd "$DEPLOY_PATH"
-            git pull origin main
+            git pull --ff-only origin main
             bash scripts/deploy.sh
       - name: Notificar resultado
         if: always()

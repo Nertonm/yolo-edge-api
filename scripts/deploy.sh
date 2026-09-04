@@ -28,6 +28,10 @@ if [ ! -x "$DVC_PYTHON" ]; then
   echo "[ERRO] Python do DVC nao encontrado: $DVC_PYTHON" >&2
   exit 1
 fi
+if [ ! -f models/yolo-epi.pt.dvc ]; then
+  echo "[ERRO] models/yolo-epi.pt.dvc ausente. O git pull falhou ou o modelo nao foi versionado." >&2
+  exit 1
+fi
 "$DVC_PYTHON" -m dvc pull models/yolo-epi.pt
 
 echo "[2/4] Iniciando nova versao..."

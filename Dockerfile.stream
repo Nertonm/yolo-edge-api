@@ -15,5 +15,6 @@ COPY app/requirements.txt .
 RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
 RUN pip install --no-cache-dir -r requirements.txt
 COPY app/ .
+COPY preprocessing/ ./preprocessing/
 EXPOSE 5000
 CMD ["python3", "stream/mjpeg_server.py", "--device", "0", "--port", "5000"]
